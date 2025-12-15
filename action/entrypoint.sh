@@ -104,43 +104,36 @@ fi
 
 # ---- update repo with HELMCHART-VERSION (optional) ----
 if [ "${UPDATE_REPO}" = "true" ] || [ "${UPDATE_REPO}" = "True" ]; then
-  echo "::group::Update HELMCHART-VERSION in repo"
-  if [ -z "${AUTH_TOKEN}" ]; then
-    echo "ERROR: auth token required to push changes back to repo. Provide auth_token or ensure GITHUB_TOKEN is available."
-    exit 6
-  fi
+echo "::group::Git Checkout (safe for branch & PR)"
 
-  # git config
-  git config --global user.name "github-actions"
-  git config --global user.email "github-actions@github.com"
-  git config --global --add safe.directory /github/workspace
-  
-  git fetch origin ${GITHUB_REF}
-  git reset --hard origin/${GITHUB_REF}
-  
-  # Determine branch
-  if [ -n "${TARGET_BRANCH_INPUT}" ]; then
-    TARGET_BRANCH="${TARGET_BRANCH_INPUT}"
-  else
-    TARGET_BRANCH=$(echo "${GITHUB_REF}" | sed 's|refs/heads/||' || true)
-    if [ -z "${TARGET_BRANCH}" ]; then TARGET_BRANCH="main"; fi
-  fi
-  echo "Target branch: ${TARGET_BRANCH}"
+git config --global user.name "github-actions"
+git config --global user.email "github-actions@github.com"
+git config --global --add safe.directory /github/workspace
 
-  # set https remote with token for push
-  REMOTE_URL="https://${GITHUB_ACTOR}:${AUTH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-  git remote set-url origin "${REMOTE_URL}"
+if [[ "${GITHUB_REF}" == refs/pull/* ]]; then
+  echo "Detected Pull Request build: ${GITHUB_REF}"
 
-  echo "VERSION=\"${FINAL_VERSION}\"" > HELMCHART-VERSION
-  git add HELMCHART-VERSION || true
+  PR_NUMBER="$(echo "${GITHUB_REF}" | cut -d'/' -f3)"
+  echo "PR number: ${PR_NUMBER}"
 
-  if git diff --cached --quiet; then
-    echo "No changes to commit for HELMCHART-VERSION"
-  else
-    git commit -m "Updated Helm Chart Version to ${FINAL_VERSION}" || true
-    git push origin "HEAD:${TARGET_BRANCH}"
-  fi
-  echo "::endgroup::"
+  git fetch origin "pull/${PR_NUMBER}/merge"
+  git reset --hard FETCH_HEAD
+
+  # For PRs, DO NOT push back unless explicitly overridden
+  TARGET_BRANCH="${TARGET_BRANCH_INPUT:-}"
+else
+  echo "Detected Branch build: ${GITHUB_REF}"
+
+  BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+  git fetch origin "${BRANCH_NAME}"
+  git reset --hard "origin/${BRANCH_NAME}"
+
+  TARGET_BRANCH="${TARGET_BRANCH_INPUT:-${BRANCH_NAME}}"
+fi
+
+echo "Target branch resolved as: ${TARGET_BRANCH}"
+echo "::endgroup::"
+
 else
   echo "UPDATE_REPO is false: skipping commit of HELMCHART-VERSION"
 fi
@@ -150,4 +143,4 @@ echo "chart_version=${FINAL_VERSION}" >> "${GITHUB_OUTPUT}"
 echo "image_tag=${IMAGE_TAGS}" >> "${GITHUB_OUTPUT}"
 echo "package_file=$(basename "${CHART_TGZ}")" >> "${GITHUB_OUTPUT}"
 
-echo "Action finished successfully"
+echo "Action finished successfully."
