@@ -115,6 +115,9 @@ if [ "${UPDATE_REPO}" = "true" ] || [ "${UPDATE_REPO}" = "True" ]; then
   git config --global user.email "github-actions@github.com"
   git config --global --add safe.directory /github/workspace
   
+  git fetch origin ${GITHUB_REF}
+  git reset --hard origin/${GITHUB_REF}
+  
   # Determine branch
   if [ -n "${TARGET_BRANCH_INPUT}" ]; then
     TARGET_BRANCH="${TARGET_BRANCH_INPUT}"
