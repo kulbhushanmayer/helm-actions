@@ -43,7 +43,7 @@ This action uses a prebuilt **toolset** image (contains `helm`, `yq`, `git`, etc
 
 ---
 
-## Example usage (local action folder)
+## Example usage (MarketPlace)
 
 ```
 name: Publish Helm Chart
@@ -62,7 +62,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Publish Helm Chart
-        uses: ./.github/actions/helm-actions    # or path to action folder
+        uses: kulbhushanmayer/helm-actions@v1.0
         with:
           chart_dir: "charts"
           oci_registry: "ghcr.io"
