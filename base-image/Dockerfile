@@ -14,7 +14,7 @@ RUN curl -fsSL https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz -o /t
   && chmod +x /usr/local/bin/helm \
   && rm -rf /tmp/helm.tgz /tmp/linux-amd64
 
-RUN curl -L https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -o /usr/local/bin/yq \
+RUN curl -L https://github.com/mikefarah/yq/releases/${YQ_VERSION}/download/yq_linux_amd64 -o /usr/local/bin/yq \
   && chmod +x /usr/local/bin/yq
 
 CMD ["bash", "-lc", "helm version --client || true; yq --version || true; git --version || true; gh --version || true"]
